@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Environnements virtuels
+.env
+.venv
+env/
+venv/
+ENV/
+
+# pyenv
+.python-version
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# Tests temporaires
+# test_*.py
+!tests/test_*.py
+
+# Rapports générés
+*.md
+!README.md
+
+# Bases de données locales
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+
+# Fichiers de checkpointing LangGraph
+checkpoints/
+.langgraph/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Variables d'environnement
+.env.local
+.env.*.local
