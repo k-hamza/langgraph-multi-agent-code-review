@@ -143,6 +143,16 @@ python -m tests.test_critic
 python -m tests.test_pipeline
 ```
 
+## Observabilité (optionnel)
+
+Les traces LLM sont envoyées à Langfuse si les variables d'environnement sont configurées.
+Copie `.env.example` vers `.env` et renseigne tes clés :
+```bash
+cp .env.example .env
+```
+
+Sans `.env`, le système fonctionne normalement sans tracing.
+
 ## Contexte pédagogique
 
 Ce projet fait partie d'une série de six projets progressifs sur le développement d'agents IA :

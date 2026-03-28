@@ -2,7 +2,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from graph import review_graph
+from graph import invoke_with_tracing, stream_with_tracing
 from config import config
 
 
@@ -31,7 +31,7 @@ def stream_graph(state: dict) -> dict:
 
     print("\n━━━ Démarrage de la revue de code ━━━\n")
 
-    for event in review_graph.stream(state, stream_mode="updates"):
+    for event in stream_with_tracing(state):
         for node_name, node_output in event.items():
             label = NODE_LABELS.get(node_name, node_name)
 
@@ -159,14 +159,14 @@ def main():
     # Exécution
     if args.no_stream:
         print("\n⏳ Analyse en cours...")
-        result = review_graph.invoke(initial_state)
+        result = invoke_with_tracing(initial_state)
         final_report = result.get("final_report", "")
         debate_round = result.get("debate_round", 0)
     else:
         final_state = stream_graph(initial_state)
         # Le streaming ne retourne pas l'état complet —
         # on relance invoke pour récupérer le résultat final proprement
-        result = review_graph.invoke(initial_state)
+        result = invoke_with_tracing(initial_state)
         final_report = result.get("final_report", "")
         debate_round = result.get("debate_round", 0)
 

@@ -6,7 +6,7 @@ from agents.performance import performance_agent
 from agents.style       import style_agent
 from agents.critic      import critic_agent
 from agents.synthesis   import synthesis_agent
-from config import config
+from config import config, get_langfuse_handler
 
 
 # ─────────────────────────────────────────
@@ -131,3 +131,18 @@ def build_graph():
 
 
 review_graph = build_graph()
+
+
+def invoke_with_tracing(state: dict) -> dict:
+    """Wrapper autour de invoke avec tracing Langfuse optionnel."""
+    handler = get_langfuse_handler()
+    config_dict = {"callbacks": [handler]} if handler else {}
+    return review_graph.invoke(state, config=config_dict)
+
+
+def stream_with_tracing(state: dict):
+    """Wrapper autour de stream avec tracing Langfuse optionnel."""
+    handler = get_langfuse_handler()
+    config_dict = {"callbacks": [handler]} if handler else {}
+    return review_graph.stream(state, config=config_dict, stream_mode="updates")
+

@@ -1,4 +1,8 @@
+import os
 from dataclasses import dataclass
+from dotenv import load_dotenv
+
+load_dotenv()
 
 @dataclass(frozen=True)
 class Config:
@@ -15,3 +19,27 @@ class Config:
     consensus_threshold: float = 0.7
 
 config = Config()
+
+
+def get_langfuse_handler():
+    public_key = os.getenv("LANGFUSE_PUBLIC_KEY")
+    secret_key  = os.getenv("LANGFUSE_SECRET_KEY")
+    host        = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
+
+    if not public_key or not secret_key:
+        return None
+
+    try:
+        from langfuse import Langfuse
+        from langfuse.langchain import CallbackHandler   # ← corrigé
+
+        Langfuse(
+            public_key=public_key,
+            secret_key=secret_key,
+            host=host,
+        )
+        return CallbackHandler()
+
+    except ImportError:
+        print("[Langfuse] Package non installé — traces désactivées.")
+        return None
