@@ -20,6 +20,45 @@ code soumis
           Agent Synthèse ────► rapport final
 ```
 
+### Graphe LangGraph
+```mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([__start__]):::first
+	run_security(run_security)
+	run_performance(run_performance)
+	run_style(run_style)
+	run_critic(run_critic)
+	run_synthesis(run_synthesis)
+	route_debate_node(route_debate_node)
+	__end__([__end__]):::last
+	__start__ --> run_performance;
+	__start__ --> run_security;
+	__start__ --> run_style;
+	route_debate_node -.-> run_performance;
+	route_debate_node -.-> run_security;
+	route_debate_node -.-> run_style;
+	route_debate_node -.-> run_synthesis;
+	run_critic -. &nbsp;debate&nbsp; .-> route_debate_node;
+	run_critic -. &nbsp;synthesize&nbsp; .-> run_synthesis;
+	run_performance --> run_critic;
+	run_security --> run_critic;
+	run_style --> run_critic;
+	run_synthesis --> __end__;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+```
+
+> Le graphe est généré via :
+> ```bash
+> python -c "from graph import review_graph; print(review_graph.get_graph().draw_mermaid())"
+> ```
+
 ### Concepts clés
 
 - **Graphe de graphes** — chaque agent est un subgraph LangGraph compilé indépendamment
