@@ -50,7 +50,7 @@ def should_debate(state: ReviewState) -> str:
     rounds_left   = round_ < config.max_debate_rounds
     needs_work    = (
         verdict.consensus_score < config.consensus_threshold
-        or len(verdict.needs_revision) > 0
+        and len(verdict.needs_revision) > 0
     )
 
     if rounds_left and needs_work:
