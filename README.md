@@ -28,30 +28,43 @@ config:
     curve: linear
 ---
 graph TD;
-	__start__([__start__]):::first
-	run_security(run_security)
-	run_performance(run_performance)
-	run_style(run_style)
-	run_critic(run_critic)
-	run_synthesis(run_synthesis)
-	route_debate_node(route_debate_node)
-	__end__([__end__]):::last
-	__start__ --> run_performance;
-	__start__ --> run_security;
-	__start__ --> run_style;
-	route_debate_node -.-> run_performance;
-	route_debate_node -.-> run_security;
-	route_debate_node -.-> run_style;
-	route_debate_node -.-> run_synthesis;
-	run_critic -. &nbsp;debate&nbsp; .-> route_debate_node;
-	run_critic -. &nbsp;synthesize&nbsp; .-> run_synthesis;
-	run_performance --> run_critic;
-	run_security --> run_critic;
-	run_style --> run_critic;
-	run_synthesis --> __end__;
-	classDef default fill:#f2f0ff,line-height:1.2
-	classDef first fill-opacity:0
-	classDef last fill:#bfb6fc
+    __start__([__start__]):::first
+
+    subgraph agents["Agents spécialisés (parallèle)"]
+        run_security(🔐 Sécurité):::specialist
+        run_performance(⚡ Performance):::specialist
+        run_style(🎨 Style):::specialist
+    end
+
+    run_critic(🔍 Critique):::critic
+    route_debate_node(🔀 Routage débat):::router
+    run_synthesis(📝 Synthèse):::synthesis
+    __end__([__end__]):::last
+
+    __start__ --> run_security
+    __start__ --> run_performance
+    __start__ --> run_style
+
+    run_security --> run_critic
+    run_performance --> run_critic
+    run_style --> run_critic
+
+    run_critic -. debate .-> route_debate_node
+    run_critic -. synthesize .-> run_synthesis
+
+    route_debate_node -.-> run_security
+    route_debate_node -.-> run_performance
+    route_debate_node -.-> run_style
+    route_debate_node -.-> run_synthesis
+
+    run_synthesis --> __end__
+
+    classDef first fill-opacity:0
+    classDef last fill:#bfb6fc,color:#000
+    classDef specialist fill:#dbeafe,stroke:#3b82f6,color:#1e3a5f
+    classDef critic fill:#fef9c3,stroke:#eab308,color:#713f12
+    classDef router fill:#f3f4f6,stroke:#6b7280,color:#111827
+    classDef synthesis fill:#dcfce7,stroke:#22c55e,color:#14532d
 ```
 
 > Le graphe est généré via :
