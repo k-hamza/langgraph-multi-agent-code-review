@@ -1,20 +1,10 @@
-# agents/performance.py
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 
 from state import AgentState, AgentOutput, ReviewState, PerformanceOutput
 from config import config
-
-SYSTEM_PROMPT = """Tu es un expert en optimisation et performance Python.
-Analyse le code fourni et identifie les problèmes de performance.
-
-Pour chaque problème trouvé, indique :
-- La nature du problème (complexité algorithmique, I/O bloquant, etc.)
-- La ligne approximative si identifiable
-- L'impact estimé (1-10)
-
-Réponds en français. Sois précis et concis."""
+from prompt_loader import load_prompt
 
 
 def init_agent(state: ReviewState) -> AgentState:
@@ -42,25 +32,24 @@ def analyze(state: AgentState) -> AgentState:
         temperature=config.temperature,
     )
 
+    prompt = load_prompt("performance")
+
     revision_context = ""
     if state["revision_notes"]:
-        revision_context = f"""
+        revision_context = (
+            f"\n\nFEEDBACK DU CRITIQUE (révision demandée) :\n"
+            f"{state['revision_notes']}\n\n"
+            f"Tiens compte de ce feedback et approfondis ton analyse."
+        )
 
-FEEDBACK DU CRITIQUE (révision demandée) :
-{state["revision_notes"]}
-
-Tiens compte de ce feedback et approfondis ton analyse en conséquence."""
-
-    user_message = f"""Fichier : {state["filename"]}
-```python
-{state["code"]}
-```
-{revision_context}
-
-Identifie tous les problèmes de performance présents dans ce code."""
+    user_message = prompt["user"].format(
+        filename=state["filename"],
+        code=state["code"],
+        revision_context=revision_context,
+    )
 
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=prompt["system"]),
         HumanMessage(content=user_message),
     ]
 

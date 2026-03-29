@@ -6,11 +6,8 @@ from state import ReviewState
 from config import config
 from typing_extensions import TypedDict
 from typing import Optional
+from prompt_loader import load_prompt
 
-
-# ─────────────────────────────────────────
-# ÉTATS
-# ─────────────────────────────────────────
 
 class SynthesisState(TypedDict):
     code:               str
@@ -26,29 +23,6 @@ class SynthesisState(TypedDict):
 class SynthesisOutput(TypedDict):
     final_report: str
 
-
-# ─────────────────────────────────────────
-# PROMPT
-# ─────────────────────────────────────────
-
-SYSTEM_PROMPT = """Tu es un expert senior en revue de code.
-Tu reçois les analyses de trois agents spécialisés et le verdict d'un agent critique.
-Tu dois produire un rapport de revue de code final, clair et actionnable.
-
-Structure ton rapport ainsi :
-## Résumé exécutif
-## Problèmes critiques (sévérité ≥ 7)
-## Problèmes mineurs (sévérité < 7)
-## Recommandations prioritaires
-## Conclusion
-
-Sois concis, précis, et priorise les actions concrètes.
-Réponds en français."""
-
-
-# ─────────────────────────────────────────
-# NŒUDS
-# ─────────────────────────────────────────
 
 def init_synthesis(state: ReviewState) -> SynthesisState:
     return {
@@ -82,6 +56,8 @@ def synthesize(state: SynthesisState) -> SynthesisState:
         temperature=config.temperature,
     )
 
+    prompt = load_prompt("synthesis")
+
     verdict_text = "Non disponible."
     if state["critic_verdict"]:
         v = state["critic_verdict"]
@@ -91,24 +67,16 @@ def synthesize(state: SynthesisState) -> SynthesisState:
             f"Tours de débat effectués : {state['debate_round']}"
         )
 
-    user_message = f"""Fichier : {state["filename"]}
-
-═══ SÉCURITÉ ═══
-{_format_output(state["security_output"])}
-
-═══ PERFORMANCE ═══
-{_format_output(state["performance_output"])}
-
-═══ STYLE ═══
-{_format_output(state["style_output"])}
-
-═══ VERDICT DU CRITIQUE ═══
-{verdict_text}
-
-Produis le rapport de revue de code final."""
+    user_message = prompt["user"].format(
+        filename=state["filename"],
+        security_section=_format_output(state["security_output"]),
+        performance_section=_format_output(state["performance_output"]),
+        style_section=_format_output(state["style_output"]),
+        verdict_section=verdict_text
+    )
 
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=prompt["system"]),
         HumanMessage(content=user_message),
     ]
 
@@ -120,9 +88,6 @@ def format_report(state: SynthesisState) -> dict:
     return {"final_report": state["raw_report"]}
 
 
-# ─────────────────────────────────────────
-# ASSEMBLAGE
-# ─────────────────────────────────────────
 
 def build_synthesis_agent():
     graph = StateGraph(

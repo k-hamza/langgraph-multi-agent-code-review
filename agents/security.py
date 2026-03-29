@@ -5,25 +5,8 @@ from langgraph.graph import StateGraph, START, END
 
 from state import AgentState, AgentOutput, ReviewState, SecurityOutput
 from config import config
+from prompt_loader import load_prompt
 
-# ─────────────────────────────────────────
-# PROMPT SYSTÈME
-# ─────────────────────────────────────────
-
-SYSTEM_PROMPT = """Tu es un expert en sécurité applicative Python.
-Analyse le code fourni et identifie les vulnérabilités de sécurité.
-
-Pour chaque problème trouvé, indique :
-- La nature de la vulnérabilité (injection, exposition de données, etc.)
-- La ligne approximative si identifiable
-- Le niveau de criticité (1-10)
-
-Réponds en français. Sois précis et concis."""
-
-
-# ─────────────────────────────────────────
-# NŒUDS DU SUBGRAPH
-# ─────────────────────────────────────────
 
 def init_agent(state: ReviewState) -> AgentState:
     """
@@ -59,27 +42,25 @@ def analyze(state: AgentState) -> AgentState:
         base_url=config.base_url,
         temperature=config.temperature,
     )
+    prompt = load_prompt("security")
 
     # Si l'agent est en révision, on enrichit le prompt avec le feedback
     revision_context = ""
     if state["revision_notes"]:
-        revision_context = f"""
-        
-FEEDBACK DU CRITIQUE (révision demandée) :
-{state["revision_notes"]}
+        revision_context = (
+            f"\n\nFEEDBACK DU CRITIQUE (révision demandée) :\n"
+            f"{state['revision_notes']}\n\n"
+            f"Tiens compte de ce feedback et approfondis ton analyse."
+        )
 
-Tiens compte de ce feedback et approfondis ton analyse en conséquence."""
-
-    user_message = f"""Fichier : {state["filename"]}
-```python
-{state["code"]}
-```
-{revision_context}
-
-Identifie toutes les vulnérabilités de sécurité présentes dans ce code."""
+    user_message = prompt["user"].format(
+        filename=state["filename"],
+        code=state["code"],
+        revision_context=revision_context,
+    )
 
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=prompt["system"]),
         HumanMessage(content=user_message),
     ]
 

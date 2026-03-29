@@ -1,20 +1,10 @@
-# agents/style.py
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 
 from state import AgentState, AgentOutput, ReviewState, StyleOutput
 from config import config
-
-SYSTEM_PROMPT = """Tu es un expert en qualité de code Python.
-Analyse le code fourni et identifie les problèmes de style et de lisibilité.
-
-Pour chaque problème trouvé, indique :
-- La nature du problème (PEP8, nommage, documentation, etc.)
-- La ligne approximative si identifiable
-- La sévérité (1-10)
-
-Réponds en français. Sois précis et concis."""
+from prompt_loader import load_prompt
 
 
 def init_agent(state: ReviewState) -> AgentState:
@@ -42,25 +32,24 @@ def analyze(state: AgentState) -> AgentState:
         temperature=config.temperature,
     )
 
+    prompt = load_prompt("style")
+
     revision_context = ""
     if state["revision_notes"]:
-        revision_context = f"""
+        revision_context = (
+            f"\n\nFEEDBACK DU CRITIQUE (révision demandée) :\n"
+            f"{state['revision_notes']}\n\n"
+            f"Tiens compte de ce feedback et approfondis ton analyse."
+        )
 
-FEEDBACK DU CRITIQUE (révision demandée) :
-{state["revision_notes"]}
-
-Tiens compte de ce feedback et approfondis ton analyse en conséquence."""
-
-    user_message = f"""Fichier : {state["filename"]}
-```python
-{state["code"]}
-```
-{revision_context}
-
-Identifie tous les problèmes de style, lisibilité et conventions PEP8 présents dans ce code."""
+    user_message = prompt["user"].format(
+        filename=state["filename"],
+        code=state["code"],
+        revision_context=revision_context,
+    )
 
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=prompt["system"]),
         HumanMessage(content=user_message),
     ]
 

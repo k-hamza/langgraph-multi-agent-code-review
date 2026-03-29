@@ -1,4 +1,3 @@
-# agents/critic.py
 import json
 from langchain_ollama import ChatOllama
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -8,6 +7,7 @@ from state import AgentState, CriticVerdict, ReviewState
 from config import config
 from typing_extensions import TypedDict
 from typing import Optional
+from prompt_loader import load_prompt
 
 
 # ─────────────────────────────────────────
@@ -31,37 +31,6 @@ class CriticOutput(TypedDict):
     critic_verdict: Optional[CriticVerdict]
     debate_round:   int
 
-
-# ─────────────────────────────────────────
-# PROMPT SYSTÈME
-# ─────────────────────────────────────────
-
-SYSTEM_PROMPT = """Tu es un expert en revue de code chargé d'évaluer la qualité des analyses produites par trois agents spécialisés.
-
-Tu dois évaluer :
-1. Chaque agent est-il resté dans son domaine ? (sécurité / performance / style)
-2. Les analyses sont-elles cohérentes ou contradictoires ?
-3. Certaines analyses sont-elles trop superficielles ?
-
-Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, avec cette structure exacte :
-{
-  "needs_revision": ["security", "performance", "style"],  // liste vide si tout va bien
-  "reasons": {
-    "security": "raison si révision demandée",
-    "performance": "raison si révision demandée",
-    "style": "raison si révision demandée"
-  },
-  "consensus_score": 0.8,
-  "global_assessment": "Évaluation globale en 2-3 phrases."
-}
-
-needs_revision ne contient que les agents qui doivent retravailler.
-consensus_score est entre 0.0 (analyses contradictoires/insuffisantes) et 1.0 (analyses solides et cohérentes)."""
-
-
-# ─────────────────────────────────────────
-# NŒUDS
-# ─────────────────────────────────────────
 
 def init_critic(state: ReviewState) -> CriticState:
     return {
@@ -95,22 +64,19 @@ def analyze(state: CriticState) -> CriticState:
         temperature=config.temperature,
     )
 
-    user_message = f"""Fichier analysé : {state["filename"]}
-Tour de débat : {state["debate_round"]}
+    prompt = load_prompt("critic")
+    
 
-═══ ANALYSE SÉCURITÉ ═══
-{_format_agent_output(state["security_output"])}
-
-═══ ANALYSE PERFORMANCE ═══
-{_format_agent_output(state["performance_output"])}
-
-═══ ANALYSE STYLE ═══
-{_format_agent_output(state["style_output"])}
-
-Évalue ces trois analyses et retourne ton verdict JSON."""
+    user_message = prompt["user"].format(
+        filename=state["filename"],
+        debate_round=state["debate_round"],
+        security_section=_format_agent_output(state["security_output"]),
+        performance_section=_format_agent_output(state["performance_output"]),
+        style_section=_format_agent_output(state["style_output"])
+    )
 
     messages = [
-        SystemMessage(content=SYSTEM_PROMPT),
+        SystemMessage(content=prompt["system"]),
         HumanMessage(content=user_message),
     ]
 
