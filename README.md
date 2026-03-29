@@ -81,6 +81,8 @@ python main.py mon_fichier.py --no-stream
   ✓ 📝 Agent Synthèse     — 31 lignes
 
 ━━━ Revue terminée ━━━
+🔁 Tours de débat effectués : 2
+
 ```
 
 ## Structure du projet
@@ -88,16 +90,24 @@ python main.py mon_fichier.py --no-stream
 ```
 projet6_multi_agent_review/
 ├── state.py              # États : ReviewState, AgentState, AgentOutput, CriticVerdict
-├── config.py             # Configuration centralisée (modèles, seuils, paramètres)
-├── graph.py              # Orchestrateur : assemblage du graphe principal
+├── config.py             # Configuration centralisée (modèles, seuils, paramètres) + Langfuse
+├── graph.py              # Orchestrateur : assemblage du graphe principal + should_debate
 ├── main.py               # CLI, streaming, rapport final
+├── prompt_loader.py      # Chargement et cache des prompts YAML
 ├── requirements.txt
-└── agents/
+├── .env.example          # Template des variables d'environnement
+├── prompts/
+│   ├── security.yaml     # Prompt système + utilisateur de l'agent Sécurité
+│   ├── performance.yaml  # Prompt système + utilisateur de l'agent Performance
+│   ├── style.yaml        # Prompt système + utilisateur de l'agent Style
+│   ├── critic.yaml       # Prompt système + utilisateur de l'agent Critique
+│   └── synthesis.yaml    # Prompt système + utilisateur de l'agent Synthèse
+├── agents/
 │   ├── __init__.py
 │   ├── security.py       # Subgraph : détection de vulnérabilités
 │   ├── performance.py    # Subgraph : détection de bottlenecks
 │   ├── style.py          # Subgraph : PEP8 et lisibilité
-│   ├── critic.py         # Subgraph : confrontation des analyses
+│   ├── critic.py         # Subgraph : confrontation des analyses + verdict JSON
 │   └── synthesis.py      # Subgraph : rapport final consolidé
 └── tests/
     ├── __init__.py
@@ -153,6 +163,9 @@ cp .env.example .env
 
 Sans `.env`, le système fonctionne normalement sans tracing.
 
+Voir [langfuse-selfhosted](https://github.com/k-hamza/langfuse-selfhosted) pour
+l'installation de l'instance locale.
+
 ## Contexte pédagogique
 
 Ce projet fait partie d'une série de six projets progressifs sur le développement d'agents IA :
@@ -169,5 +182,6 @@ Ce projet fait partie d'une série de six projets progressifs sur le développem
 ## Limitations connues
 
 - Ollama ne parallélise pas les requêtes sur un seul GPU — les agents s'exécutent séquentiellement en pratique malgré le fan-out
-- Le parsing des findings est basique (`split("\n")`) — un format JSON structuré améliorerait la précision
+- Le parsing des findings est basique (`split("\n")`) — un format JSON structuré améliorerait la précision (prévu en P7)
 - Le streaming relance le graphe une seconde fois pour récupérer l'état final proprement
+- `consensus_score` est une estimation subjective du LLM — utilisé comme confirmation, pas comme seule source de vérité
