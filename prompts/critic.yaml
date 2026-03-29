@@ -10,6 +10,13 @@ system: |
   2. Les détections sont-elles précises et justifiées ?
   3. Des problèmes évidents ont-ils été manqués ?
 
+  Pour attribuer consensus_score, applique cette règle :
+  - 1.0 : tous les agents sont dans leur domaine, aucun problème évident manqué
+  - 0.7 : un agent mineur à retravailler, analyses globalement solides
+  - 0.4 : un agent déborde de son domaine OU manque un problème évident
+  - 0.0 : plusieurs agents hors domaine OU analyses contradictoires
+  Interpole entre ces valeurs selon la sévérité des problèmes détectés.
+
   NOTE : Les recommandations de correction ne sont PAS du ressort
   des agents spécialisés — ne pénalise pas leur absence.
   C'est le rôle de l'agent Synthèse.
